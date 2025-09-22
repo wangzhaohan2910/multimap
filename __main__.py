@@ -2,31 +2,97 @@ from collections import defaultdict
 
 
 class multimap(defaultdict):
-    def __init__(self, **kwargs):
-        super().__init__(set, **kwargs)
+    """The Multimap in Python.
+
+    >>> issubclass(multimap, defaultdict)
+    True
+    """
+    def __init__(self):
+        """Ctor (Initializer).
+
+        >>> multimap().default_factory
+        <class 'set'>
+        """
+        super().__init__(set)
 
     def __str__(self):
-        return "multimap(" + str(dict(self)) + ")"
+        """Stringify it.
 
-    def __repr__(self):
-        return str(self)
-
-    def remove_value(self, value):
+        >>> mp = multimap()
+        >>> mp["foo"] = {"baz", "bar", 0xcafe}
+        >>> mp[0xfeed] = {998244353, "baz"}
+        >>> ''.join(sorted(str(mp))) # This is the only way to test it.
+        "         '''''''''''',,,,111222334455556666668999:::::aaabbbfffilmoooooortuzz{}"
+        """
+        res = "multi{"
         for k in self.keys():
-            self[k].discard(value)
+            for v in self[k]:
+                res += repr(k) + ": " + repr(v) + ", "
+        return res[:-2] + "}"
+
+    __repr__ = __str__
 
     def remove_item(self, key, value):
+        """Remove a k-v item.
+
+        >>> mp1 = multimap()
+        >>> mp2 = multimap()
+        >>> mp1["foo"] = {"baz", "bar", 0xcafe}
+        >>> mp2["foo"] = {"baz", 0xcafe}
+        >>> mp1[0xfeed] = {998244353, "baz"}
+        >>> mp2[0xfeed] = {998244353, "baz"}
+        
+        >>> mp1.remove_item("foo", "bar")
+        >>> mp1 == mp2
+        True
+        
+        >>> mp2[0xfeed] = {998244353}
+        >>> mp1.remove_item(0xfeed, "baz")
+        >>> mp1 == mp2
+        True
+        
+        >>> del mp2[0xfeed]
+        >>> mp1 == mp2
+        False
+        
+        >>> mp1.remove_item(0xfeed, 998244353)
+        >>> mp1 == mp2
+        True
+        """
         self[key].remove(value)
+        if self[key] == set():
+            del self[key]
 
     def change_key(self, old, new):
+        """Rename a key. If the key is already existed, then merge it.
+
+        >>> mp1 = multimap()
+        >>> mp2 = multimap()
+        >>> mp1["foo"] = {"baz", "bar", 0xcafe}
+        >>> mp2["fubar"] = {"baz", "bar", 0xcafe}
+        >>> mp1[0xfeed] = {998244353, "baz"}
+        >>> mp2[0xfeed] = {998244353, "baz"}
+
+        >>> mp1.change_key("foo", "fubar")
+        >>> mp1 == mp2
+        True
+
+        >>> mp1.change_key("fubar", 0xfeed)
+        >>> mp2[0xfeed] = {"baz", "bar", 0xcafe}
+        >>> del mp2["fubar"]
+        >>> mp1 == mp2
+        False
+
+        >>> mp2[0xfeed] = {998244353, "baz"}
+        >>> mp1 == mp2
+        False
+        
+        >>> mp2[0xfeed] = {"baz", "bar", 0xcafe, 998244353}
+        >>> mp1 == mp2
+        True
+        """
         self[new].update(self[old])
         del self[old]
-
-    def change_value(self, old, new):
-        for k in self.keys():
-            if old in self[k]:
-                self[k].remove(old)
-                self[k].add(new)
 
     def change_item(self, key, old, new):
         self[key].remove(old)
@@ -53,3 +119,8 @@ class multimap(defaultdict):
         for k in self.keys():
             v.extend(self[k])
         return v
+
+    
+if __name__ == "__main__":
+    from doctest import testmod
+    testmod()
