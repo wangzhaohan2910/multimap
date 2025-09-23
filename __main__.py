@@ -16,26 +16,6 @@ class multimap(defaultdict):
         """
         super().__init__(set)
 
-    def __str__(self):
-        """Stringify it.
-
-        >>> mp = multimap()
-        >>> mp["foo"] = {"baz", "bar", 0xcafe}
-        >>> mp[0xfeed] = {998244353, "baz"}
-        >>> ''.join(sorted(str(mp))) # This is the only way to test it.
-        "         '''''''''''',,,,111222334455556666668999:::::aaabbbfffilmoooooortuzz{}"
-        """
-        if self:
-            res = "multi{"
-            for k in self.keys():
-                for v in self[k]:
-                    res += repr(k) + ": " + repr(v) + ", "
-            return res[:-2] + "}"
-        else:
-            return "multi{}"
-
-    __repr__ = __str__
-
     def keys(self):
         res = set()
         for k in super().keys():
@@ -58,14 +38,39 @@ class multimap(defaultdict):
                 res.add((k, v))
         return res
 
-    def count(self, key):
-        return len(self[key])
+    def __str__(self):
+        """Stringify it.
+
+        >>> mp = multimap()
+        >>> mp["foo"] = {"baz", "bar", 0xcafe}
+        >>> mp[0xfeed] = {998244353, "baz"}
+        >>> ''.join(sorted(str(mp))) # This is the only way to test it.
+        "         '''''''''''',,,,111222334455556666668999:::::aaabbbfffilmoooooortuzz{}"
+        """
+        if self:
+            res = "multi{"
+            for k in self.keys():
+                for v in self[k]:
+                    res += repr(k) + ": " + repr(v) + ", "
+            return res[:-2] + "}"
+        else:
+            return "multi{}"
+
+    __repr__ = __str__
 
     def __len__(self):
         res = 0
         for k in self.keys():
             res += len(self[k])
         return res
+
+    def __bool__(self):
+        return len(self.keys()) != 0
+
+    __nonzero__ = __bool__
+
+    def count(self, key):
+        return len(self[key])
 
     def insert(self, key, value):
         self[key].add(value)
