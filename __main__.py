@@ -115,10 +115,11 @@ class multimap(defaultdict):
         return v
 
     def items(self):
-        v = []
+        l = []
         for k in self.keys():
-            v.extend(self[k])
-        return v
+            for v in self[k]:
+                l.append((k, v))
+        return l
 
     
 if __name__ == "__main__":
