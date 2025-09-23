@@ -25,11 +25,14 @@ class multimap(defaultdict):
         >>> ''.join(sorted(str(mp))) # This is the only way to test it.
         "         '''''''''''',,,,111222334455556666668999:::::aaabbbfffilmoooooortuzz{}"
         """
-        res = "multi{"
-        for k in self.keys():
-            for v in self[k]:
-                res += repr(k) + ": " + repr(v) + ", "
-        return res[:-2] + "}"
+        if self:
+            res = "multi{"
+            for k in self.keys():
+                for v in self[k]:
+                    res += repr(k) + ": " + repr(v) + ", "
+            return res[:-2] + "}"
+        else:
+            return "multi{}"
 
     __repr__ = __str__
 
