@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 
-class multimap(defaultdict):
+class wzhmultimap(defaultdict):
     """The Multimap in Python.
 
     >>> issubclass(multimap, defaultdict)
