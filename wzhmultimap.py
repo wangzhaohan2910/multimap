@@ -1,3 +1,10 @@
+"""
+wzhmultimap
+===========
+
+The Multimap in Python.
+"""
+
 from collections import defaultdict
 from operator import or_, add
 from functools import reduce
