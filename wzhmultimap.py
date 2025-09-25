@@ -1,4 +1,6 @@
 from collections import defaultdict
+from operator import or_, add
+from functools import reduce
 
 
 class multimap(defaultdict):
@@ -16,6 +18,34 @@ class multimap(defaultdict):
         """
         super().__init__(set)
 
+    def clean(self, *key):
+        """Remove the certain key if they are empty.
+        If not give, then remove all the empty keys in the multimap.
+
+        >>> mp = multimap()
+        >>> mp["foo"] = set()
+        >>> mp[0xfeed] = set()
+        >>> mp["ccf"] = set()
+        >>> mp.clean("foo", 0xfeed)
+        >>> "foo" in mp
+        False
+        >>> 0xfeed in mp
+        False
+        >>> "ccf" in mp
+        True
+
+        >>> mp.clean()
+        >>> "ccf" in mp
+        False
+        """
+        if len(key) > 0:
+            for k in key:
+                if k in self and self[k] == set():
+                    del self[k]
+        else:
+            for k in [k for k in super().keys() if self[k] == set()]:
+                del self[k]
+
     def count(self, key):
         """Return the number of values of the given key.
 
@@ -29,10 +59,13 @@ class multimap(defaultdict):
         >>> mp.count("lorem")
         0
         """
-        return len(self[key])
+        if key in self:
+            return len(self[key])
+        else:
+            return 0
 
     def keys(self):
-        """Return a set contained the keys of the multimap.
+        """Return a set-like object contained the keys of the multimap.
 
         >>> mp = multimap()
         >>> mp["foo"] = {"baz", "bar", 0xcafe}
@@ -48,18 +81,10 @@ class multimap(defaultdict):
 
         >>> del mp[0xfeed]
         >>> mp.keys()
-        set()
+        dict_keys([])
         """
-        res = set()
-        rm = set()
-        for k in super().keys():
-            if self.count(k) == 0:
-                rm.add(k)
-            else:
-                res.add(k)
-        for k in rm:
-            del self[k]
-        return res
+        self.clean()
+        return super().keys()
 
     def values(self):
         """Return the uniqued set of all the values in the multimap.
@@ -73,10 +98,7 @@ class multimap(defaultdict):
         >>> mp.values() == {"bar", "baz", 0xcafe, 998244353}
         True
         """
-        res = set()
-        for k in self.keys():
-            res.update(self[k])
-        return res
+        return reduce(or_, super().values(), set())
 
     def items(self):
         """Return a set contained all the k-v tuples of the multimap.
@@ -91,11 +113,7 @@ class multimap(defaultdict):
             (0xfeed, 998244353), (0xfeed, "baz")}
         True
         """
-        res = set()
-        for k in self.keys():
-            for v in self[k]:
-                res.add((k, v))
-        return res
+        return {(k, v) for k in self.keys() for v in self[k]}
 
     def __str__(self):
         """Stringify the multimap.
@@ -109,14 +127,11 @@ class multimap(defaultdict):
         >>> ''.join(sorted(str(mp))) # This is the only way to test it.
         "         '''''''''''',,,,111222334455556666668999:::::aaabbbfffilmoooooortuzz{}"
         """
-        if self:
-            res = "multi{"
-            for k in self.keys():
-                for v in self[k]:
-                    res += repr(k) + ": " + repr(v) + ", "
-            return res[:-2] + "}"
-        else:
-            return "multi{}"
+        return (
+            "multi{"
+            + ", ".join(repr(k) + ": " + repr(v) for k, v in self.items())
+            + "}"
+        )
 
     __repr__ = __str__
 
@@ -132,10 +147,7 @@ class multimap(defaultdict):
         >>> len(mp)
         5
         """
-        res = 0
-        for k in self.keys():
-            res += len(self[k])
-        return res
+        return reduce(add, (len(self[k]) for k in self.keys()), 0)
 
     def __bool__(self):
         """Return whether the multimap is empty.
@@ -158,42 +170,32 @@ class multimap(defaultdict):
 
     __nonzero__ = __bool__
 
-    def insert(self, key, value):
-        """Add a k-v pair into the multimap.
+    def insert(self, key, *value):
+        """Add some values of a key to the multimap.
 
         >>> mp = multimap()
-        >>> mp.insert("foo", "bar")
-        >>> mp.insert("foo", "baz")
-        >>> mp.insert("foo", 0xcafe)
-        >>> mp.insert(0xfeed, 998244353)
-        >>> mp.insert(0xfeed, "baz")
-        >>> len(mp)
-        5
-        >>> mp.items() == {("foo", "bar"), ("foo", "baz"), ("foo", 0xcafe), \
-            (0xfeed, 998244353), (0xfeed, "baz")}
+        >>> mp.insert("foo", "bar", "baz", 0xcafe)
+        >>> mp.insert(0xfeed, 998244353, "baz")
+        >>> mp.items() == {(0xfeed, 998244353), (0xfeed, "baz"), \
+            ("foo", "bar"), ("foo", "baz"), ("foo", 0xcafe)}
         True
         """
-        self[key].add(value)
+        if value != []:
+            self[key] |= set(value)
 
-    def erase(self, key, value):
-        """Remove a k-v pair from the multimap. If it is not in the multimap, then raise a KeyError.
+    def erase(self, key, *value):
+        """Remove some values of a key from the multimap.
 
         >>> mp = multimap()
         >>> mp["foo"] = {"baz", "bar", 0xcafe}
         >>> mp[0xfeed] = {998244353, "baz"}
-        >>> mp.erase("foo", 998244353)
-        Traceback (most recent call last):
-        KeyError: 998244353
-
-        >>> mp.erase("foo", "bar")
-        >>> len(mp)
-        4
+        >>> mp.erase("foo", 998244353, "bar")
         >>> mp.items() == {("foo", "baz"), ("foo", 0xcafe), \
             (0xfeed, 998244353), (0xfeed, "baz")}
         True
         """
-        self[key].remove(value)
-        if self.count(key) == 0:
+        self[key] -= set(value)
+        if self[key] == set():
             del self[key]
 
 

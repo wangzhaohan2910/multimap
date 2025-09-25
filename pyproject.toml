@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wzhmultimap"
-version = "0.0.4"
+version = "0.0.6"
 dependencies = []
 authors = [{name="wangzhaohan2910", email="wangcf3000@sina.com"}]
 description = "The Multimap in Python"
