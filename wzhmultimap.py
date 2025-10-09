@@ -205,6 +205,10 @@ class multimap(defaultdict):
         if self[key] == set():
             del self[key]
 
+class ovtree:
+    """ Like ov_tree in G++ PBDS.
+    """
+    pass
 
 if __name__ == "__main__":
     from doctest import testmod
