@@ -5,10 +5,10 @@ wzhmultimap
 The Multimap in Python.
 """
 
+from operator import or_, add, sub, getitem
 from collections import defaultdict
-from operator import or_, add
+from bisect import insort, bisect
 from functools import reduce
-
 
 class multimap(defaultdict):
     """The Multimap in Python.
@@ -205,10 +205,44 @@ class multimap(defaultdict):
         if self[key] == set():
             del self[key]
 
+class pointer:
+    """Like the iterator in C++, not the one in Python."""
+
+    def __init__(self, lst, k, op=getitem, adder=add, suber=sub):
+        self.lst = lst
+        self.k = k
+        self.op = op
+        self.adder = adder
+        self.suber = suber
+
+    def __eq__(self, rhs):
+        return self.lst is rhs.lst
+            and self.k == rhs.k
+            and self.op == rhs.op
+            and self.adder == rhs.adder
+            and self.suber == rhs.suber
+
+    def __add__(self, k):
+        return pointer(self.lst, self.adder(self.k, k), self.op, self.adder, self.suber)
+
+    def __sub__(self, k):
+        if isinstance(k, int):
+            return pointer(self.lst, self.suber(self.k, k), self.op, self.adder, self.suber)
+        elif self.lst is k.lst and self.op == k.op:
+            return self.suber(self.k, k)
+
+    def __call__(self):
+        return op(self.lst, self.k)
+
 class ovtree:
     """ Like ov_tree in G++ PBDS.
     """
-    pass
+    data = []
+
+    def __init__(self, dic):
+        [self.data.insort((k, v)) for k, v in dic.items()]
+
+    # TODO: https://cppreference.cn/w/cpp/container/multimap
 
 if __name__ == "__main__":
     from doctest import testmod
