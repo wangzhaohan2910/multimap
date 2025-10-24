@@ -5,7 +5,7 @@ wzhmultimap
 The Multimap in Python.
 """
 
-from operator import or_, add, sub, getitem
+from operator import or_, add, sub, getitem, lt
 from collections import defaultdict
 from bisect import insort, bisect
 from functools import reduce
@@ -208,26 +208,53 @@ class multimap(defaultdict):
 class pointer:
     """Like the iterator in C++, not the one in Python."""
 
-    def __init__(self, lst, k, op=getitem, adder=add, suber=sub):
+    def __init__(self, lst, k, op=getitem, adder=add, suber=sub, lter=lt):
         self.lst = lst
         self.k = k
         self.op = op
         self.adder = adder
         self.suber = suber
+        self.lter = lt
 
     def __eq__(self, rhs):
-        return self.lst is rhs.lst
+        return self.lst is rhs.lst\
+            and self.op == rhs.op\
+            and self.adder == rhs.adder\
+            and self.suber == rhs.suber\
+            and self.lter == rhs.lter\
             and self.k == rhs.k
-            and self.op == rhs.op
-            and self.adder == rhs.adder
-            and self.suber == rhs.suber
+
+    def __ne__(self, rhs):
+        return not (self == rhs)
+
+    def __lt__(self, rhs):
+        return self.lst is rhs.lst\
+            and self.op == rhs.op\
+            and self.adder == rhs.adder\
+            and self.suber == rhs.suber\
+            and self.lter == rhs.lter\
+            and self.lter(self.k, rhs.k)
+
+    def __le__(self, rhs):
+        return self == rhs or self < rhs
+
+    def __ge__(self, rhs):
+        return self.lst is rhs.lst\
+            and self.op == rhs.op\
+            and self.adder == rhs.adder\
+            and self.suber == rhs.suber\
+            and self.lter == rhs.lter\
+            and not self.lter(self.k, rhs.k)
+
+    def __gt__(self, rhs):
+        return self <= rhs and self != rhs
 
     def __add__(self, k):
-        return pointer(self.lst, self.adder(self.k, k), self.op, self.adder, self.suber)
+        return pointer(self.lst, self.adder(self.k, k), self.op, self.adder, self.suber, self.lter)
 
     def __sub__(self, k):
         if isinstance(k, int):
-            return pointer(self.lst, self.suber(self.k, k), self.op, self.adder, self.suber)
+            return pointer(self.lst, self.suber(self.k, k), self.op, self.adder, self.suber, self.lter)
         elif self.lst is k.lst and self.op == k.op:
             return self.suber(self.k, k)
 
@@ -240,7 +267,7 @@ class ovtree:
     data = []
 
     def __init__(self, dic):
-        [self.data.insort((k, v)) for k, v in dic.items()]
+        # TODO
 
     # TODO: https://cppreference.cn/w/cpp/container/multimap
 
